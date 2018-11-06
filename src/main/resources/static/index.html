@@ -28,11 +28,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     </head>
 
 
-    
+
     <body onload="app.init()">
-        X:<input id="x" type="number"/>
-        Y:<input id="y" type="number"/>        
-        <button onclick="app.publishPoint($('#x').val(),$('#y').val())">Send point</button>
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <div>
+            X:<input id="x" type="number"/>
+            Y:<input id="y" type="number"/>        
+            <button onclick="app.publishPoint($('#x').val(), $('#y').val())">Send point</button>
+        </div>
+        <br>
+        <div>
+            <canvas id="canvas" width="800" height="600" style="border-style: solid; border-width: 1px; border-color: gray"></canvas>
+        </div>        
     </body>
 </html>
