@@ -8,6 +8,7 @@ var app = (function () {
     }
 
     var stompClient = null;
+    var stompConnected = null;
 
     var addPointToCanvas = function (point) {
         var canvas = document.getElementById("canvas");
@@ -28,7 +29,7 @@ var app = (function () {
     };
 
 
-    var connectAndSubscribe = function () {
+    var connectAndSubscribe = function (numConection) {
         console.info('Connecting to WS...');
         var socket = new SockJS('/stompendpoint');
         stompClient = Stomp.over(socket);
@@ -36,8 +37,10 @@ var app = (function () {
         //subscribe to /topic/TOPICXX when connections succeed
         stompClient.connect({}, function (frame) {
             console.log('Connected: ' + frame);
-            stompClient.subscribe('/topic/newpoint', function (eventbody) {
+            stompClient.subscribe('/topic/newpoint.' + numConection, function (eventbody) {
                 //alert("Punto x: " + JSON.parse(eventbody.body).x + " Punto y: " + JSON.parse(eventbody.body).y);
+                console.log("Connection: " + numConection);
+
                 var pointX = JSON.parse(eventbody.body).x;
                 var pointY = JSON.parse(eventbody.body).y;
 
@@ -57,15 +60,31 @@ var app = (function () {
         init: function () {
             var can = document.getElementById("canvas");
 
-            can.addEventListener("click", function (evt) {
-                var pointX = getMousePosition(evt).x;
-                var pointY = getMousePosition(evt).y;
-
-                stompClient.send("/topic/newpoint", {}, JSON.stringify({x: pointX, y: pointY}));
-            });
+            stompConnected = false;
 
             //websocket connection
-            connectAndSubscribe();
+            //connectAndSubscribe();
+        },
+
+        connect: function (numConection) {
+            if (stompConnected === false) {
+                alert("Connected on " + numConection + " identifier");
+                var can = document.getElementById("canvas");
+
+                can.addEventListener("click", function (evt) {
+                    var pointX = getMousePosition(evt).x;
+                    var pointY = getMousePosition(evt).y;
+
+                    stompClient.send("/topic/newpoint." + numConection, {}, JSON.stringify({x: pointX, y: pointY}));
+                });
+
+                connectAndSubscribe(numConection);
+
+                stompConnected = true;
+            } else {
+                alert("Actually you are connected");
+            }
+
         },
 
         publishPoint: function (px, py) {
@@ -78,11 +97,14 @@ var app = (function () {
         },
 
         disconnect: function () {
-            if (stompClient !== null) {
+            if (stompConnected !== false) {
                 stompClient.disconnect();
+                alert("Disconnected succesfully");
+                stompConnected = false;
+                console.log("Disconnected");
+            } else {
+                alert("You should be connected on a identifier");
             }
-            setConnected(false);
-            console.log("Disconnected");
         }
     };
 
