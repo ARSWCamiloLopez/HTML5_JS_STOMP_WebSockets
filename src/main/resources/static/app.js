@@ -9,6 +9,7 @@ var app = (function () {
 
     var stompClient = null;
     var stompConnected = null;
+    var globalConnection;
 
     var addPointToCanvas = function (point) {
         var canvas = document.getElementById("canvas");
@@ -29,7 +30,7 @@ var app = (function () {
     };
 
 
-    var connectAndSubscribe = function (numConection) {
+    var connectAndSubscribe = function () {
         console.info('Connecting to WS...');
         var socket = new SockJS('/stompendpoint');
         stompClient = Stomp.over(socket);
@@ -37,9 +38,9 @@ var app = (function () {
         //subscribe to /topic/TOPICXX when connections succeed
         stompClient.connect({}, function (frame) {
             console.log('Connected: ' + frame);
-            stompClient.subscribe('/topic/newpoint.' + numConection, function (eventbody) {
+            stompClient.subscribe('/topic/newpoint.' + globalConnection, function (eventbody) {
                 //alert("Punto x: " + JSON.parse(eventbody.body).x + " Punto y: " + JSON.parse(eventbody.body).y);
-                console.log("Connection: " + numConection);
+                console.log("Connection: " + globalConnection);
 
                 var pointX = JSON.parse(eventbody.body).x;
                 var pointY = JSON.parse(eventbody.body).y;
@@ -68,19 +69,22 @@ var app = (function () {
 
         connect: function (numConection) {
             if (stompConnected === false) {
-                alert("Connected on " + numConection + " identifier");
+                globalConnection = numConection;
+                alert("Connected on " + globalConnection + " identifier");
                 var can = document.getElementById("canvas");
 
                 can.addEventListener("click", function (evt) {
                     var pointX = getMousePosition(evt).x;
                     var pointY = getMousePosition(evt).y;
 
-                    stompClient.send("/topic/newpoint." + numConection, {}, JSON.stringify({x: pointX, y: pointY}));
+                    stompClient.send("/topic/newpoint." + globalConnection, {}, JSON.stringify({x: pointX, y: pointY}));
                 });
 
-                connectAndSubscribe(numConection);
+                connectAndSubscribe();
 
                 stompConnected = true;
+                
+                document.getElementById("identifier").disabled = true;
             } else {
                 alert("Actually you are connected");
             }
@@ -99,9 +103,14 @@ var app = (function () {
         disconnect: function () {
             if (stompConnected !== false) {
                 stompClient.disconnect();
+                
+                stompClient.unsubscribe(globalConnection);
+                
+                stompClient = null;
                 alert("Disconnected succesfully");
                 stompConnected = false;
                 console.log("Disconnected");
+                document.getElementById("identifier").disabled = false;
             } else {
                 alert("You should be connected on a identifier");
             }
