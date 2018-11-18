@@ -6,6 +6,8 @@
 package edu.eci.arsw.collabpaint.controller;
 
 import edu.eci.arsw.collabpaint.model.Point;
+import java.util.ArrayList;
+import java.util.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,12 +21,30 @@ import org.springframework.stereotype.Controller;
 @Controller
 public class CollabPaintController {
 
+    private Integer numDibujo;
+    private HashMap<Integer, ArrayList<Point>> hashPoints = new HashMap<>();
+    
     @Autowired
     SimpMessagingTemplate msgt;
 
     @MessageMapping("/newpoint.{numdibujo}")
-    public void handlePointEvent(Point pt, @DestinationVariable String numdibujo) throws Exception {
-        System.out.println("Nuevo punto recibido en el servidor!:" + pt);
-        msgt.convertAndSend("/topic/newpoint." + numdibujo, pt);
+    public synchronized void handlePointEvent(Point pt, @DestinationVariable String numdibujo) throws Exception {
+        
+        numDibujo = Integer.parseInt(numdibujo);
+        
+        if(hashPoints.containsKey(numDibujo)){
+            hashPoints.get(numDibujo).add(pt);
+        } else{
+            ArrayList<Point> arrayToAdd = new ArrayList<>();
+            hashPoints.put(numDibujo, arrayToAdd);
+        }
+        
+        if(hashPoints.get(numDibujo).size() < 4){
+            msgt.convertAndSend("/topic/newpoint." + numDibujo, pt);
+        } else{
+            msgt.convertAndSend("/topic/newpoint." + numDibujo, pt);
+            msgt.convertAndSend("/topic/newpolygon." + numDibujo, hashPoints.get(numDibujo));
+            hashPoints.get(numDibujo).clear();
+        }           
     }
 }

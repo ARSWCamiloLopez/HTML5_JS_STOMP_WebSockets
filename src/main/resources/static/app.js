@@ -11,6 +11,20 @@ var app = (function () {
     var stompConnected = null;
     var globalConnection;
 
+    var addPolygonToCanvas = function polygon(polygonPoints) {
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.moveTo(polygonPoints[0].x, polygonPoints[0].y);
+        for (var i = 1; i < polygonPoints.length; i++) {
+            ctx.lineTo(polygonPoints[i].x, polygonPoints[i].y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = "Black";
+        ctx.fill();
+    }
+
     var addPointToCanvas = function (point) {
         var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
@@ -50,6 +64,11 @@ var app = (function () {
                 addPointToCanvas(pointToCanvas);
 
             });
+            stompClient.subscribe('/topic/newpolygon.' + globalConnection, function (eventbody) {
+                console.log("Trying to draw a new polygon");
+
+                addPolygonToCanvas(JSON.parse(eventbody.body));
+            });
         });
 
     };
@@ -77,13 +96,15 @@ var app = (function () {
                     var pointX = getMousePosition(evt).x;
                     var pointY = getMousePosition(evt).y;
 
-                    stompClient.send("/topic/newpoint." + globalConnection, {}, JSON.stringify({x: pointX, y: pointY}));
+                    stompClient.send("/app/newpoint." + globalConnection, {}, JSON.stringify({x: pointX, y: pointY}));
                 });
 
                 connectAndSubscribe();
 
                 stompConnected = true;
-                
+
+                can.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
                 document.getElementById("identifier").disabled = true;
             } else {
                 alert("Actually you are connected");
@@ -103,9 +124,9 @@ var app = (function () {
         disconnect: function () {
             if (stompConnected !== false) {
                 stompClient.disconnect();
-                
+
                 stompClient.unsubscribe(globalConnection);
-                
+
                 stompClient = null;
                 alert("Disconnected succesfully");
                 stompConnected = false;
