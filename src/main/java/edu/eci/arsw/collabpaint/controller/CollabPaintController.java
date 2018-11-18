@@ -23,28 +23,27 @@ public class CollabPaintController {
 
     private Integer numDibujo;
     private HashMap<Integer, ArrayList<Point>> hashPoints = new HashMap<>();
-    
+
     @Autowired
     SimpMessagingTemplate msgt;
 
     @MessageMapping("/newpoint.{numdibujo}")
     public synchronized void handlePointEvent(Point pt, @DestinationVariable String numdibujo) throws Exception {
-        
+
         numDibujo = Integer.parseInt(numdibujo);
-        
-        if(hashPoints.containsKey(numDibujo)){
-            hashPoints.get(numDibujo).add(pt);
-        } else{
+
+        if (!hashPoints.containsKey(numDibujo)) {
             ArrayList<Point> arrayToAdd = new ArrayList<>();
             hashPoints.put(numDibujo, arrayToAdd);
         }
-        
-        if(hashPoints.get(numDibujo).size() < 4){
-            msgt.convertAndSend("/topic/newpoint." + numDibujo, pt);
-        } else{
-            msgt.convertAndSend("/topic/newpoint." + numDibujo, pt);
+
+        hashPoints.get(numDibujo).add(pt);
+
+        msgt.convertAndSend("/topic/newpoint." + numDibujo, pt);
+
+        if (!(hashPoints.get(numDibujo).size() < 4)) {
             msgt.convertAndSend("/topic/newpolygon." + numDibujo, hashPoints.get(numDibujo));
             hashPoints.get(numDibujo).clear();
-        }           
+        }
     }
 }

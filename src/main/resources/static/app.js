@@ -87,27 +87,31 @@ var app = (function () {
         },
 
         connect: function (numConection) {
-            if (stompConnected === false) {
-                globalConnection = numConection;
-                alert("Connected on " + globalConnection + " identifier");
-                var can = document.getElementById("canvas");
+            if (!(numConection.toString() === "")) {
+                if (stompConnected === false) {
+                    globalConnection = numConection;
+                    alert("Connected on " + globalConnection + " identifier");
+                    var can = document.getElementById("canvas");
 
-                can.addEventListener("click", function (evt) {
-                    var pointX = getMousePosition(evt).x;
-                    var pointY = getMousePosition(evt).y;
+                    can.addEventListener("click", canvasClick = function canvasClick(evt) {
+                        var pointX = getMousePosition(evt).x;
+                        var pointY = getMousePosition(evt).y;
 
-                    stompClient.send("/app/newpoint." + globalConnection, {}, JSON.stringify({x: pointX, y: pointY}));
-                });
+                        stompClient.send("/app/newpoint." + globalConnection, {}, JSON.stringify({x: pointX, y: pointY}));
+                    });
 
-                connectAndSubscribe();
+                    connectAndSubscribe();
 
-                stompConnected = true;
+                    stompConnected = true;
 
-                can.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                    can.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 
-                document.getElementById("identifier").disabled = true;
+                    document.getElementById("identifier").disabled = true;
+                } else {
+                    alert("Actually you are connected");
+                }
             } else {
-                alert("Actually you are connected");
+                alert("Debe insertar una sala para conectarse");
             }
 
         },
@@ -131,7 +135,9 @@ var app = (function () {
                 alert("Disconnected succesfully");
                 stompConnected = false;
                 console.log("Disconnected");
+
                 document.getElementById("identifier").disabled = false;
+                document.getElementById("canvas").removeEventListener("click", canvasClick);
             } else {
                 alert("You should be connected on a identifier");
             }
